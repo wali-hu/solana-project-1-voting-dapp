@@ -1,76 +1,50 @@
-import * as anchor from '@coral-xyz/anchor'
-import {Program} from '@coral-xyz/anchor'
-import {Keypair} from '@solana/web3.js'
-import {Solanavotingdapp} from '../target/types/solanavotingdapp'
+import * as anchor from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
+import { Keypair, PublicKey } from "@solana/web3.js";
+import { Solanavotingdapp } from "../target/types/solanavotingdapp";
+import { BankrunProvider, startAnchor } from "anchor-bankrun";
 
-describe('solanavotingdapp', () => {
-  // Configure the client to use the local cluster.
-  const provider = anchor.AnchorProvider.env()
-  anchor.setProvider(provider)
-  const payer = provider.wallet as anchor.Wallet
+const IDL = require("../target/idl/solanavotingdapp.json");
 
-  const program = anchor.workspace.Solanavotingdapp as Program<Solanavotingdapp>
+const solanavotingdappAddress = new PublicKey(
+  "coUnmi3oBUtwtd9fjeAvSsJssXh5A5xyPbhpewyzRVF"
+);
 
-  const solanavotingdappKeypair = Keypair.generate()
+describe("solanavotingdapp", () => {
+  it("Initialize Poll", async () => {
+    const context = await startAnchor(
+      "",
+      [{ name: "solanavotingdapp", programId: solanavotingdappAddress }],
+      []
+    );
+    const provider = new BankrunProvider(context);
 
-  it('Initialize Solanavotingdapp', async () => {
-    await program.methods
-      .initialize()
-      .accounts({
-        solanavotingdapp: solanavotingdappKeypair.publicKey,
-        payer: payer.publicKey,
-      })
-      .signers([solanavotingdappKeypair])
-      .rpc()
+    const solanavotingdappProgram = new Program<Solanavotingdapp>(
+      IDL,
+      provider
+    );
 
-    const currentCount = await program.account.solanavotingdapp.fetch(solanavotingdappKeypair.publicKey)
+    await solanavotingdappProgram.methods
+      .initializePoll(
+        new anchor.BN(1),
+        "What is your favorite type of peanut butter?",
+        new anchor.BN(0),
+        new anchor.BN(1840718618)
+      )
+      .rpc();
 
-    expect(currentCount.count).toEqual(0)
-  })
+    const [pollAddress] = PublicKey.findProgramAddressSync(
+      [new anchor.BN(1).toArrayLike(Buffer, "le", 8)],
+      solanavotingdappAddress
+    );
 
-  it('Increment Solanavotingdapp', async () => {
-    await program.methods.increment().accounts({ solanavotingdapp: solanavotingdappKeypair.publicKey }).rpc()
+    const poll = await solanavotingdappProgram.account.poll.fetch(pollAddress);
+    console.log(poll);
 
-    const currentCount = await program.account.solanavotingdapp.fetch(solanavotingdappKeypair.publicKey)
-
-    expect(currentCount.count).toEqual(1)
-  })
-
-  it('Increment Solanavotingdapp Again', async () => {
-    await program.methods.increment().accounts({ solanavotingdapp: solanavotingdappKeypair.publicKey }).rpc()
-
-    const currentCount = await program.account.solanavotingdapp.fetch(solanavotingdappKeypair.publicKey)
-
-    expect(currentCount.count).toEqual(2)
-  })
-
-  it('Decrement Solanavotingdapp', async () => {
-    await program.methods.decrement().accounts({ solanavotingdapp: solanavotingdappKeypair.publicKey }).rpc()
-
-    const currentCount = await program.account.solanavotingdapp.fetch(solanavotingdappKeypair.publicKey)
-
-    expect(currentCount.count).toEqual(1)
-  })
-
-  it('Set solanavotingdapp value', async () => {
-    await program.methods.set(42).accounts({ solanavotingdapp: solanavotingdappKeypair.publicKey }).rpc()
-
-    const currentCount = await program.account.solanavotingdapp.fetch(solanavotingdappKeypair.publicKey)
-
-    expect(currentCount.count).toEqual(42)
-  })
-
-  it('Set close the solanavotingdapp account', async () => {
-    await program.methods
-      .close()
-      .accounts({
-        payer: payer.publicKey,
-        solanavotingdapp: solanavotingdappKeypair.publicKey,
-      })
-      .rpc()
-
-    // The account should no longer exist, returning null.
-    const userAccount = await program.account.solanavotingdapp.fetchNullable(solanavotingdappKeypair.publicKey)
-    expect(userAccount).toBeNull()
-  })
-})
+    expect(poll.pollId.toNumber()).toEqual(1);
+    expect(poll.disctription).toEqual(
+      "What is your favorite type of peanut butter?"
+    );
+    expect(poll.startTime.toNumber()).toBeLessThan(poll.endTime.toNumber());
+  });
+});

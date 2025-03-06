@@ -1,5 +1,3 @@
-#![allow(clippy::result_large_err)]
-
 use anchor_lang::prelude::*;
 
 declare_id!("coUnmi3oBUtwtd9fjeAvSsJssXh5A5xyPbhpewyzRVF");
@@ -7,64 +5,48 @@ declare_id!("coUnmi3oBUtwtd9fjeAvSsJssXh5A5xyPbhpewyzRVF");
 #[program]
 pub mod solanavotingdapp {
     use super::*;
-
-  pub fn close(_ctx: Context<CloseSolanavotingdapp>) -> Result<()> {
-    Ok(())
-  }
-
-  pub fn decrement(ctx: Context<Update>) -> Result<()> {
-    ctx.accounts.solanavotingdapp.count = ctx.accounts.solanavotingdapp.count.checked_sub(1).unwrap();
-    Ok(())
-  }
-
-  pub fn increment(ctx: Context<Update>) -> Result<()> {
-    ctx.accounts.solanavotingdapp.count = ctx.accounts.solanavotingdapp.count.checked_add(1).unwrap();
-    Ok(())
-  }
-
-  pub fn initialize(_ctx: Context<InitializeSolanavotingdapp>) -> Result<()> {
-    Ok(())
-  }
-
-  pub fn set(ctx: Context<Update>, value: u8) -> Result<()> {
-    ctx.accounts.solanavotingdapp.count = value.clone();
-    Ok(())
-  }
+    pub fn initialize_poll(
+        ctx: Context<InitializePoll>,
+        poll_id: u64,
+        discription: String,
+        start_time: u64,
+        end_time: u64,
+    ) -> Result<()> {
+        let poll = &mut ctx.accounts.poll;
+        poll.poll_id = poll_id;
+        poll.disctription = discription;
+        poll.start_time = start_time;
+        poll.end_time = end_time;
+        poll.canidate_amount = 0;
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
-pub struct InitializeSolanavotingdapp<'info> {
-  #[account(mut)]
-  pub payer: Signer<'info>,
+#[instruction(poll_id: u64)]
+pub struct InitializePoll<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
 
-  #[account(
-  init,
-  space = 8 + Solanavotingdapp::INIT_SPACE,
-  payer = payer
-  )]
-  pub solanavotingdapp: Account<'info, Solanavotingdapp>,
-  pub system_program: Program<'info, System>,
-}
-#[derive(Accounts)]
-pub struct CloseSolanavotingdapp<'info> {
-  #[account(mut)]
-  pub payer: Signer<'info>,
+    #[account(
+        init,
+        payer = signer,
+        space = 8 + Poll::INIT_SPACE,
+        seeds = [poll_id.to_le_bytes().as_ref()],
+        bump
+    )]
+    pub poll: Account<'info, Poll>,
 
-  #[account(
-  mut,
-  close = payer, // close account and return lamports to payer
-  )]
-  pub solanavotingdapp: Account<'info, Solanavotingdapp>,
-}
-
-#[derive(Accounts)]
-pub struct Update<'info> {
-  #[account(mut)]
-  pub solanavotingdapp: Account<'info, Solanavotingdapp>,
+    pub system_program: Program<'info, System>,
 }
 
 #[account]
 #[derive(InitSpace)]
-pub struct Solanavotingdapp {
-  count: u8,
+pub struct Poll {
+    pub poll_id: u64,
+    #[max_len(200)]
+    pub disctription: String,
+    pub start_time: u64,
+    pub end_time: u64,
+    pub canidate_amount: u64,
 }
