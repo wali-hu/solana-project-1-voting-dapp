@@ -14,6 +14,67 @@ export type Solanavotingdapp = {
   },
   "instructions": [
     {
+      "name": "initializeCandidate",
+      "discriminator": [
+        210,
+        107,
+        118,
+        204,
+        255,
+        97,
+        112,
+        26
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "poll",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "path": "pollId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "candidate",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "path": "pollId"
+              },
+              {
+                "kind": "arg",
+                "path": "candidateName"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "candidateName",
+          "type": "string"
+        },
+        {
+          "name": "pollId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "initializePoll",
       "discriminator": [
         193,
@@ -70,6 +131,19 @@ export type Solanavotingdapp = {
   ],
   "accounts": [
     {
+      "name": "candidate",
+      "discriminator": [
+        86,
+        69,
+        250,
+        96,
+        193,
+        10,
+        222,
+        123
+      ]
+    },
+    {
       "name": "poll",
       "discriminator": [
         110,
@@ -85,6 +159,22 @@ export type Solanavotingdapp = {
   ],
   "types": [
     {
+      "name": "candidate",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "candidateName",
+            "type": "string"
+          },
+          {
+            "name": "candidateVotes",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "poll",
       "type": {
         "kind": "struct",
@@ -94,7 +184,7 @@ export type Solanavotingdapp = {
             "type": "u64"
           },
           {
-            "name": "disctription",
+            "name": "discription",
             "type": "string"
           },
           {
@@ -106,7 +196,7 @@ export type Solanavotingdapp = {
             "type": "u64"
           },
           {
-            "name": "canidateAmount",
+            "name": "candidateAmount",
             "type": "u64"
           }
         ]

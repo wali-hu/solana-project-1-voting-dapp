@@ -11,19 +11,22 @@ const solanavotingdappAddress = new PublicKey(
 );
 
 describe("solanavotingdapp", () => {
-  it("Initialize Poll", async () => {
-    const context = await startAnchor(
+  let context;
+  let provider;
+  let solanavotingdappProgram: Program<Solanavotingdapp>;
+
+  beforeAll(async () => {
+    context = await startAnchor(
       "",
       [{ name: "solanavotingdapp", programId: solanavotingdappAddress }],
       []
     );
-    const provider = new BankrunProvider(context);
+    provider = new BankrunProvider(context);
 
-    const solanavotingdappProgram = new Program<Solanavotingdapp>(
-      IDL,
-      provider
-    );
+    solanavotingdappProgram = new Program<Solanavotingdapp>(IDL, provider);
+  });
 
+  it("Initialize Poll", async () => {
     await solanavotingdappProgram.methods
       .initializePoll(
         new anchor.BN(1),
@@ -42,9 +45,44 @@ describe("solanavotingdapp", () => {
     console.log(poll);
 
     expect(poll.pollId.toNumber()).toEqual(1);
-    expect(poll.disctription).toEqual(
+    expect(poll.discription).toEqual(
       "What is your favorite type of peanut butter?"
     );
     expect(poll.startTime.toNumber()).toBeLessThan(poll.endTime.toNumber());
   });
+
+  it("initialize candidate", async () => {
+    await solanavotingdappProgram.methods
+      .initializeCandidate("Smooth", new anchor.BN(1))
+      .rpc();
+
+    await solanavotingdappProgram.methods
+      .initializeCandidate("Crunchy", new anchor.BN(1))
+      .rpc();
+
+    const [crunchyAddress] = PublicKey.findProgramAddressSync(
+      [new anchor.BN(1).toArrayLike(Buffer, "le", 8), Buffer.from("Crunchy")],
+      solanavotingdappAddress
+    );
+
+    const crunchyCandidate =
+      await solanavotingdappProgram.account.candidate.fetch(crunchyAddress);
+
+    console.log(crunchyCandidate);
+
+    expect(crunchyCandidate.candidateVotes.toNumber()).toEqual(0);
+
+    const [smoothAddress] = PublicKey.findProgramAddressSync(
+      [new anchor.BN(1).toArrayLike(Buffer, "le", 8), Buffer.from("Smooth")],
+      solanavotingdappAddress
+    );
+
+    const smoothCandidate =
+      await solanavotingdappProgram.account.candidate.fetch(smoothAddress);
+
+    console.log(smoothCandidate);
+    expect(smoothCandidate.candidateVotes.toNumber()).toEqual(0);
+  });
+
+  it("vote", async () => {});
 });
