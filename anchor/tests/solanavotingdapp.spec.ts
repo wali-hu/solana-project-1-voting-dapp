@@ -84,5 +84,20 @@ describe("solanavotingdapp", () => {
     expect(smoothCandidate.candidateVotes.toNumber()).toEqual(0);
   });
 
-  it("vote", async () => {});
+  it("vote", async () => {
+    await solanavotingdappProgram.methods
+      .vote("Smooth", new anchor.BN(1))
+      .rpc();
+
+    const [smoothAddress] = PublicKey.findProgramAddressSync(
+      [new anchor.BN(1).toArrayLike(Buffer, "le", 8), Buffer.from("Smooth")],
+      solanavotingdappAddress
+    );
+
+    const smoothCandidate =
+      await solanavotingdappProgram.account.candidate.fetch(smoothAddress);
+
+    console.log(smoothCandidate);
+    expect(smoothCandidate.candidateVotes.toNumber()).toEqual(1);
+  });
 });
