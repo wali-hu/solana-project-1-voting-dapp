@@ -27,6 +27,8 @@ pub mod solanavotingdapp {
         _poll_id: u64,
     ) -> Result<()> {
         let candidate = &mut ctx.accounts.candidate;
+        let poll = &mut ctx.accounts.poll;
+        poll.candidate_amount += 1;
         candidate.candidate_name = candidate_name;
         candidate.candidate_votes = 0;
         Ok(())
